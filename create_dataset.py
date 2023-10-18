@@ -1,50 +1,61 @@
 import os
-import pickle
-
+import pyarrow as pa
+import pyarrow.parquet as pq
 import mediapipe as mp
 import cv2
-import matplotlib.pyplot as plt
 
-
-mp_hands = mp.solutions.hands
-mp_drawing = mp.solutions.drawing_utils
-mp_drawing_styles = mp.solutions.drawing_styles
-
-hands = mp_hands.Hands(static_image_mode=True, min_detection_confidence=0.3)
+mp_holistic = mp.solutions.holistic
 
 DATA_DIR = './data'
+OUTPUT_DIR = './train_landmark_files'
 
-data = []
-labels = []
+if not os.path.exists(OUTPUT_DIR):
+    os.makedirs(OUTPUT_DIR)
+
 for dir_ in os.listdir(DATA_DIR):
-    for img_path in os.listdir(os.path.join(DATA_DIR, dir_)):
+    for img_idx, img_path in enumerate(os.listdir(os.path.join(DATA_DIR, dir_))):
         data_aux = []
-
-        x_ = []
-        y_ = []
 
         img = cv2.imread(os.path.join(DATA_DIR, dir_, img_path))
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-        results = hands.process(img_rgb)
-        if results.multi_hand_landmarks:
-            for hand_landmarks in results.multi_hand_landmarks:
-                for i in range(len(hand_landmarks.landmark)):
-                    x = hand_landmarks.landmark[i].x
-                    y = hand_landmarks.landmark[i].y
+        with mp_holistic.Holistic(static_image_mode=True) as holistic:
+            results = holistic.process(img_rgb)
 
-                    x_.append(x)
-                    y_.append(y)
+            if results.pose_landmarks:
+                for idx, landmark in enumerate(results.pose_landmarks.landmark):
+                    data_aux.append({'frame': 1, 'row_id': f'{1}-pose-{idx}', 'type': 'pose', 'x': landmark.x, 'y': landmark.y, 'z': landmark.z if landmark.HasField('z') else 0.0})
 
-                for i in range(len(hand_landmarks.landmark)):
-                    x = hand_landmarks.landmark[i].x
-                    y = hand_landmarks.landmark[i].y
-                    data_aux.append(x - min(x_))
-                    data_aux.append(y - min(y_))
+            if results.face_landmarks:
+                for idx, landmark in enumerate(results.face_landmarks.landmark):
+                    data_aux.append({'frame': 1, 'row_id': f'{1}-face-{idx}', 'type': 'face', 'x': landmark.x, 'y': landmark.y, 'z': landmark.z if landmark.HasField('z') else 0.0})
 
-            data.append(data_aux)
-            labels.append(dir_)
+            if results.left_hand_landmarks:
+                for idx, landmark in enumerate(results.left_hand_landmarks.landmark):
+                    data_aux.append({'frame': 1, 'row_id': f'{1}-left_hand-{idx}', 'type': 'left_hand', 'x': landmark.x, 'y': landmark.y, 'z': landmark.z if landmark.HasField('z') else 0.0})
 
-f = open('data.pickle', 'wb')
-pickle.dump({'data': data, 'labels': labels}, f)
-f.close()
+            if results.right_hand_landmarks:
+                for idx, landmark in enumerate(results.right_hand_landmarks.landmark):
+                    data_aux.append({'frame': 1, 'row_id': f'{1}-right_hand-{idx}', 'type': 'right_hand', 'x': landmark.x, 'y': landmark.y, 'z': landmark.z if landmark.HasField('z') else 0.0})
+
+            # Dibujar landmarks en la imagen
+            annotated_image = img.copy()
+            if results.pose_landmarks:
+                mp_holistic.draw_landmarks(annotated_image, results.pose_landmarks, mp_holistic.POSE_CONNECTIONS)
+            if results.face_landmarks:
+                mp_holistic.draw_landmarks(annotated_image, results.face_landmarks, mp_holistic.FACE_CONNECTIONS)
+            if results.left_hand_landmarks:
+                mp_holistic.draw_landmarks(annotated_image, results.left_hand_landmarks, mp_holistic.HAND_CONNECTIONS)
+            if results.right_hand_landmarks:
+                mp_holistic.draw_landmarks(annotated_image, results.right_hand_landmarks, mp_holistic.HAND_CONNECTIONS)
+
+            cv2.imshow('Annotated Image', annotated_image)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+
+        # Convert data to Arrow Table
+        table = pa.Table.from_pandas(data_aux)
+
+        # Write Arrow table to Parquet
+        output_path = os.path.join(OUTPUT_DIR, f'NombreEstatico{img_idx + 1}.parquet')
+        pq.write_table(table, output_path)

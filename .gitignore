@@ -1,0 +1,10 @@
+# Ignorar todas las imágenes en la carpeta 'data'
+data/*.png
+data/*.jpg
+data/*.jpeg
+
+# Ignorar todo en la carpeta 'train_landmarks_file'
+train_landmarks_file/*
+
+# Ignorar completamente la carpeta 'venv'
+venv/
