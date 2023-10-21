@@ -3,7 +3,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import mediapipe as mp
 import cv2
-
+import pandas as pd
 mp_holistic = mp.solutions.holistic
 
 DATA_DIR = './data'
@@ -39,23 +39,22 @@ for dir_ in os.listdir(DATA_DIR):
                     data_aux.append({'frame': 1, 'row_id': f'{1}-right_hand-{idx}', 'type': 'right_hand', 'x': landmark.x, 'y': landmark.y, 'z': landmark.z if landmark.HasField('z') else 0.0})
 
             # Dibujar landmarks en la imagen
-            annotated_image = img.copy()
-            if results.pose_landmarks:
-                mp_holistic.draw_landmarks(annotated_image, results.pose_landmarks, mp_holistic.POSE_CONNECTIONS)
-            if results.face_landmarks:
-                mp_holistic.draw_landmarks(annotated_image, results.face_landmarks, mp_holistic.FACE_CONNECTIONS)
-            if results.left_hand_landmarks:
-                mp_holistic.draw_landmarks(annotated_image, results.left_hand_landmarks, mp_holistic.HAND_CONNECTIONS)
-            if results.right_hand_landmarks:
-                mp_holistic.draw_landmarks(annotated_image, results.right_hand_landmarks, mp_holistic.HAND_CONNECTIONS)
+            
 
-            cv2.imshow('Annotated Image', annotated_image)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
-
-        # Convert data to Arrow Table
-        table = pa.Table.from_pandas(data_aux)
+        # Convert data to Pandas and the to a  Arrow Table
+        panda_aux = pd.DataFrame(data_aux)
+        table = pa.Table.from_pandas(panda_aux)
+        # See pandas
+        print(panda_aux.head)
+        # Cheking types
+        unique_types = panda_aux["type"].nunique()
+        print(unique_types)
+        types_in_video = panda_aux["type"].unique()
+        print(types_in_video)
 
         # Write Arrow table to Parquet
         output_path = os.path.join(OUTPUT_DIR, f'NombreEstatico{img_idx + 1}.parquet')
         pq.write_table(table, output_path)
+
+        ##AND NOW I HAVE BECOME DEAD, DESTROYER OF WORDS##
+
