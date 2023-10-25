@@ -7,10 +7,15 @@ import pandas as pd
 mp_holistic = mp.solutions.holistic
 
 DATA_DIR = './data'
-OUTPUT_DIR = './train_landmark_files'
+OUTPUT_DIR = './train_landmark_files/100'
 
 if not os.path.exists(OUTPUT_DIR):
     os.makedirs(OUTPUT_DIR)
+
+# Crear el archivo CSV para almacenar la relación
+csv_filename = 'parquet_to_sign_mapping.csv'
+csv_path = os.path.join(OUTPUT_DIR, csv_filename)
+csv_data = []
 
 for dir_ in os.listdir(DATA_DIR):
     for img_idx, img_path in enumerate(os.listdir(os.path.join(DATA_DIR, dir_))):
@@ -40,21 +45,18 @@ for dir_ in os.listdir(DATA_DIR):
 
             # Dibujar landmarks en la imagen
             
-
-        # Convert data to Pandas and the to a  Arrow Table
+        # Convertir datos a Pandas y luego a una tabla Arrow
         panda_aux = pd.DataFrame(data_aux)
         table = pa.Table.from_pandas(panda_aux)
-        # See pandas
-        print(panda_aux.head)
-        # Cheking types
-        unique_types = panda_aux["type"].nunique()
-        print(unique_types)
-        types_in_video = panda_aux["type"].unique()
-        print(types_in_video)
 
-        # Write Arrow table to Parquet
-        output_path = os.path.join(OUTPUT_DIR, f'NombreEstatico{img_idx + 1}.parquet')
+        # Escribir la tabla Arrow en Parquet
+        output_path = os.path.join(OUTPUT_DIR, f'{img_idx + 1000}.parquet')
         pq.write_table(table, output_path)
 
-        ##AND NOW I HAVE BECOME DEAD, DESTROYER OF WORDS##
+        # Añadir la entrada al archivo CSV
+        csv_data.append({'parquet_file': f'{img_idx + 1000}.parquet', 'sign': dir_})
+
+# Guardar el archivo CSV
+df_csv = pd.DataFrame(csv_data)
+df_csv.to_csv(csv_path, index=False)
 
