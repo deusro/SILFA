@@ -1,7 +1,30 @@
 # Ignorar todas las imágenes en la carpeta 'data'
-data/*.png
-data/*.jpg
-data/*.jpeg
+data/A/*.jpg
+data/B/*.jpg
+data/C/*.jpg
+data/D/*.jpg
+data/E/*.jpg
+data/F/*.jpg
+data/G/*.jpg
+data/H/*.jpg
+data/I/*.jpg
+data/J/*.jpg
+data/K/*.jpg
+data/L/*.jpg
+data/M/*.jpg
+data/N/*.jpg
+data/O/*.jpg
+data/P/*.jpg
+data/Q/*.jpg
+data/R/*.jpg
+data/S/*.jpg
+data/T/*.jpg
+data/U/*.jpg
+data/V/*.jpg
+data/W/*.jpg
+data/X/*.jpg
+data/Y/*.jpg
+data/Z/*.jpg
 
 # Ignorar todo en la carpeta 'train_landmarks_file'
 train_landmarks_file/*

@@ -34,5 +34,11 @@ for root, dirs, files in os.walk(OUTPUT_DIR):
 # Crear un DataFrame a partir de la lista de datos
 df = pd.DataFrame(data_list)
 
+# Reemplazar las barras invertidas por barras diagonales en la columna 'path'
+df['path'] = df['path'].str.replace('\\', '/')
+
+# Eliminar './' del inicio de la columna 'path'
+df['path'] = df['path'].str.replace('./', '')
+
 # Guardar el DataFrame como un archivo CSV
-df.to_csv('output.csv', index=False)
+df.to_csv('output_modified.csv', index=False)
